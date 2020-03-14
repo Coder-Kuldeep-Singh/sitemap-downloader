@@ -11,10 +11,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -32,8 +34,8 @@ type URLSet struct {
 }
 
 type SitemapURL struct {
-	Location string `xml:"loc"`
-	// LastModifiedDate string `xml:"lastmod"`
+	Location         string `xml:"loc"`
+	LastModifiedDate string `xml:"lastmod"`
 	// ChangeFrequency string `xml:"changefreq"`
 	// Priority string `xml:"priority"`
 }
@@ -52,18 +54,24 @@ func DatabaseConnectionString() (db *sql.DB) {
 	if err != nil {
 		log.Println("Connection String failed", err)
 	}
-	fmt.Println("connected")
+	// fmt.Println("connected")
 	return db
 }
 
-func InsertAllURLS(url SitemapURL) {
+func InsertAllURLS(uri SitemapURL) {
+	urls, err := url.Parse(uri.Location)
+	if err != nil {
+		log.Println("Error while Parsing the url", err)
+	}
 	db := DatabaseConnectionString()
+	currentTime := time.Now()
+	crawling_date := currentTime.Format("2006-01-02")
 	//Insert data one by one
-	inserted, err := db.Prepare("INSERT INTO Sitemap(domain_name, url) VALUES(?,?)")
+	inserted, err := db.Prepare("INSERT INTO Sitemap(domain_name, url,modified_date,crawling_date) VALUES(?,?,?,?)")
 	if err != nil {
 		log.Println("Error while Inserting data", err.Error())
 	}
-	executing, err := inserted.Exec("domain_name", url.Location)
+	executing, err := inserted.Exec(urls.Host, uri.Location, uri.LastModifiedDate, crawling_date)
 	if err != nil {
 		log.Println("Error to Executing the Insert Statement", err)
 	}

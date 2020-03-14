@@ -190,7 +190,13 @@ func DetectType(urlSitemap, pageType string) {
 //Detect which type of url we getting from Robots.txt file
 func DetectTypeOfFiles(urlSitemap string) {
 	fmt.Println(urlSitemap)
-	headerInfo, err := http.Get(urlSitemap)
+	tr := &http.Transport{
+		MaxIdleConns:       10,
+		IdleConnTimeout:    30 * time.Second,
+		DisableCompression: true,
+	}
+	client := &http.Client{Transport: tr}
+	headerInfo, err := client.Get(urlSitemap)
 	if err != nil {
 		log.Println("response not found", err)
 	}
@@ -209,7 +215,13 @@ func DetectTypeOfFiles(urlSitemap string) {
 
 //fetch all domain+urls
 func FetchUrl(url string) []byte {
-	response, err := http.Get(url)
+	tr := &http.Transport{
+		MaxIdleConns:       10,
+		IdleConnTimeout:    30 * time.Second,
+		DisableCompression: true,
+	}
+	client := &http.Client{Transport: tr}
+	response, err := client.Get(url)
 	if err != nil {
 		log.Println("having problem to find url", err)
 	}
@@ -225,7 +237,13 @@ func FetchUrl(url string) []byte {
 
 //fetch all domain+urls
 func VisitRobotsTxt(domain string) string {
-	response, err := http.Get(domain + "robots.txt")
+	tr := &http.Transport{
+		MaxIdleConns:       10,
+		IdleConnTimeout:    30 * time.Second,
+		DisableCompression: true,
+	}
+	client := &http.Client{Transport: tr}
+	response, err := client.Get(domain + "robots.txt")
 	if err != nil {
 		log.Println("having problem to find url", err)
 	}

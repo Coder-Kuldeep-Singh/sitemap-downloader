@@ -62,6 +62,7 @@ func InsertAllURLS(uri SitemapURL) {
 	urls, err := url.Parse(uri.Location)
 	if err != nil {
 		log.Println("Error while Parsing the url", err)
+		return
 	}
 	db := DatabaseConnectionString()
 	currentTime := time.Now()
@@ -74,6 +75,7 @@ func InsertAllURLS(uri SitemapURL) {
 	executing, err := inserted.Exec(urls.Host, uri.Location, uri.LastModifiedDate, crawling_date)
 	if err != nil {
 		log.Println("Error to Executing the Insert Statement", err)
+		return
 	}
 	log.Println(executing)
 	defer db.Close()
@@ -199,6 +201,7 @@ func DetectTypeOfFiles(urlSitemap string) {
 	headerInfo, err := client.Get(urlSitemap)
 	if err != nil {
 		log.Println("response not found", err)
+		return
 	}
 	defer headerInfo.Body.Close()
 	// log.Println(headerInfo.Header.Get("Content-type"))
@@ -207,8 +210,10 @@ func DetectTypeOfFiles(urlSitemap string) {
 	waitGroup.Add(1)
 	if headerInfo.Header.Get("Content-type") == pageType1 {
 		go DetectType(urlSitemap, pageType1)
+		return
 	} else if headerInfo.Header.Get("content-type") == pageType2 {
 		go DetectType(urlSitemap, pageType2)
+		return
 	}
 	waitGroup.Wait()
 }
@@ -224,11 +229,13 @@ func FetchUrl(url string) []byte {
 	response, err := client.Get(url)
 	if err != nil {
 		log.Println("having problem to find url", err)
+		return nil
 	}
 	defer response.Body.Close()
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		log.Println("Nothing found in the page", err)
+		return nil
 	}
 	// log.Println(string(body))
 	return body
@@ -268,10 +275,11 @@ func getSitemapFromRobotsTxt(domain string) {
 		log.Println("No sitemap url found", domain)
 		return
 	}
-	waitGroup.Add(len(FileToDomain))
+	// waitGroup.Add(len(FileToDomain))
 	for _, Domain := range FileToDomain {
 		response := strings.Replace(Domain[1], " ", "", -1)
 		// log.Println(Domain[1])
+		waitGroup.Add(1)
 		go DetectTypeOfFiles(response)
 		// CreateDomainsFile(string(Domain[1]))
 	}
@@ -285,6 +293,7 @@ func ParseXml(url string) {
 	xmlData := FetchUrl(url)
 	if string(xmlData) == "" {
 		log.Println("Xml file is Empty")
+		return
 	} else {
 		// filename, err := url.Parse(urlSitemap)
 		// if err != nil {
@@ -354,9 +363,10 @@ func ParseXml(url string) {
 			}
 		}
 		log.Println("Numbers of url found", urlCount)
+		waitGroup.Done()
 		return
 	}
-	waitGroup.Done()
+	// return
 
 }
 
